@@ -1,0 +1,32 @@
+name: 三星历史固件自动抓取
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    steps:
+    - name: 1. 检出仓库代码
+      uses: actions/checkout@v3
+
+    - name: 2. 初始化 Java 17 环境
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: 'maven'
+
+    - name: 3. 云端自动编译并执行抓取
+      run: |
+        mvn compile exec:java -Dexec.mainClass="com.example.firmware.FirmwareApplication" -Dexec.args="--mode=cron"
+
+    - name: 4. 将生成的最新 data.json 自动提交并保存回仓库
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git add data.json
+        git commit -m "自动更新：最新三星历史固件数据" || exit 0
+        git push
